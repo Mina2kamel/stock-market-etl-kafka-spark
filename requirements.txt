@@ -1,0 +1,10 @@
+pandas>=2.2.2
+yfinance>=0.2.37
+confluent-kafka>=2.3.0
+python-dotenv>=1.0.1
+
+# MinIO (compatible with Amazon S3 API)
+minio>=7.2.4
+
+# Parquet support
+pyarrow>=15.0.2
