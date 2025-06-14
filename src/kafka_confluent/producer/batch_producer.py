@@ -4,11 +4,10 @@ import pandas as pd
 from datetime import datetime
 from confluent_kafka import Producer
 from typing import Optional
-from config import STOCK_SYMBOLS
+from src.config import STOCK_SYMBOLS, config
 import yfinance as yf
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger('airflow')
 
 class StockBatchProducer:
     def __init__(self, kafka_bootstrap_servers: str, kafka_topic: str):
@@ -125,6 +124,19 @@ class StockBatchProducer:
                 continue
 
 
+def main():
+    """
+    Main entrypoint to run the batch producer.
+    """
+
+    producer = StockBatchProducer(
+        kafka_bootstrap_servers=config.bootstrap_servers,
+        kafka_topic=config.batch_topic_name
+    )
+    producer.collect_historical_data(period="1y")
+
+if __name__ == "__main__":
+    main()
 
 
 

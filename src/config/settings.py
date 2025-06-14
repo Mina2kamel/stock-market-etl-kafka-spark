@@ -9,6 +9,7 @@ load_dotenv()
 class Config:
     bootstrap_servers: str = os.getenv("BOOTSTRAP_SERVERS")
     batch_topic_name: str = os.getenv("BATCH_TOPIC_NAME")
+    stream_topic_name: str = os.getenv("STREAM_TOPIC_NAME")
 
     # MinIO configuration
     minio_endpoint: str = os.getenv("MINIO_ENDPOINT")

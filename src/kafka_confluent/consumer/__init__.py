@@ -1,1 +1,2 @@
 from .batch_consumer import StockBatchConsumer
+from .stream_consumer import StockStreamConsumer

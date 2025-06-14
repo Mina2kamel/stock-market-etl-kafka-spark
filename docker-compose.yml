@@ -9,15 +9,15 @@ x-airflow-common:
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 10
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- confluent-kafka yfinance pandas boto3 snowflake-connector-python minio}
+    AIRFLOW__WEBSERVER__SECRET_KEY: '46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho='
+    PYTHONPATH: /opt/airflow:${PYTHONPATH}
+    # _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- confluent-kafka yfinance pandas boto3 snowflake-connector-python minio}
   volumes:
     - ./src/airflow/dags:/opt/airflow/dags
-    - ./src/airflow/logs:/opt/airflow/logs
-    - ./src/airflow/plugins:/opt/airflow/plugins
-    - ./src/airflow/requirements:/opt/airflow/requirements
-    - ./src/airflow/reports:/opt/airflow/reports
-    - /var/run/docker.sock:/var/run/docker.sock
+    # - ./src/airflow/logs:/opt/airflow/logs
+    # - ./src/airflow/plugins:/opt/airflow/plugins
+    - ./src:/opt/aiflow/src
+
   depends_on:
     postgres:
       condition: service_healthy
@@ -29,8 +29,8 @@ services:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
-    volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
+    # volumes:
+    #   - postgres-db-volume:/var/lib/postgresql/data
     ports:
       - 5433:5432
     healthcheck:
@@ -106,78 +106,91 @@ services:
       exit 0;
       "
 
-  # spark-master:
-  #   image: bitnami/spark:3.4.2
-  #   environment:
-  #     - SPARK_MODE=master
-  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
-  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
-  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-  #     - SPARK_SSL_ENABLED=no
-  #   ports:
-  #     - "8080:8080"
-  #     - "7077:7077"
-  #   volumes:
-  #     - ./src/spark/jobs:/opt/spark/jobs
-  #     - ./data/spark:/opt/spark/data
-  #   restart: always
+  spark-master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "8090:8090"
+      - "7077:7077"
+    volumes:
+      - ./src:/opt/src
+      - ./logs:/opt/logs
+      - ./data/spark:/opt/spark/data
+    restart: always
 
-  # spark-worker:
-  #   image: bitnami/spark:3.4.2
-  #   environment:
-  #     - SPARK_MODE=worker
-  #     - SPARK_MASTER_URL=spark://spark-master:7077
-  #     - SPARK_WORKER_MEMORY=2g
-  #     - SPARK_WORKER_CORES=2
-  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
-  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
-  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-  #     - SPARK_SSL_ENABLED=no
-  #   depends_on:
-  #     - spark-master
-  #   volumes:
-  #     - ./src/spark/jobs:/opt/spark/jobs
-  #     - ./data/spark:/opt/spark/data
-  #   restart: always
+  spark-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_WORKER_TIMEOUT=60
+      - SPARK_NETWORK_TIMEOUT=120
+    depends_on:
+      - spark-master
+    volumes:
+      - ./src:/opt/src
+      - ./logs:/opt/logs
+      - ./data/spark:/opt/spark/data
+    restart: always
+
   # # In spark-client service
   # spark-client:
-  #   image: bitnami/spark:3.4.2
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
   #   depends_on:
   #     - spark-master
   #   environment:
   #     - SPARK_MODE=client
   #     - SPARK_MASTER_URL=spark://spark-master:7077
   #   volumes:
-  #     - ./src/spark/jobs:/opt/spark/jobs
+  #     - ./src:/opt/src
+  #     - ./logs:/opt/logs
   #     - ./src/airflow/dags/scripts:/opt/airflow/dags/scripts
   #     - ./data:/opt/spark/data
   #   command: sleep infinity
-  # airflow-webserver:
-  #   <<: *airflow-common
-  #   command: webserver
-  #   ports:
-  #     - 8081:8080
-  #   healthcheck:
-  #     test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-  #     interval: 10s
-  #     timeout: 10s
-  #     retries: 5
-  #   restart: always
 
-  # airflow-scheduler:
-  #   <<: *airflow-common
-  #   command: scheduler
-  #   restart: always
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
 
-  # airflow-init:
-  #   <<: *airflow-common
-  #   command: version
-  #   environment:
-  #     <<: *airflow-common-env
-  #     _AIRFLOW_DB_UPGRADE: 'true'
-  #     _AIRFLOW_WWW_USER_CREATE: 'true'
-  #     _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-  #     _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    command: version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
 
 volumes:
   postgres-db-volume:

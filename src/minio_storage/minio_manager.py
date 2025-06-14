@@ -9,7 +9,7 @@ from minio.error import S3Error
 logger = logging.getLogger(__name__)
 
 class MinioManager:
-    def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket_name: str):
+    def __init__(self, endpoint: str, access_key: str, secret_key: str, bucket_name: str, batch_size: int = 100):
         self.client = Minio(
             endpoint,
             access_key=access_key,
@@ -17,6 +17,7 @@ class MinioManager:
             secure=False  # Set to True in production
         )
         self.bucket_name = bucket_name
+        self.batch_size = batch_size
         self._ensure_bucket()
 
     def _ensure_bucket(self):
