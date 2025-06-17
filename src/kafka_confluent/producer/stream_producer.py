@@ -8,7 +8,7 @@ from confluent_kafka import Producer
 from typing import Optional
 from config import STOCKS_INITAIL
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('airflow')
 
 class StockStreamProducer:
     def __init__(self, kafka_bootstrap_servers: str, kafka_topic: str, interval: Optional[int] = 30):

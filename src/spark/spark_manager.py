@@ -1,4 +1,7 @@
 from pyspark.sql import SparkSession
+from src.utils import setup_logger
+
+logger = setup_logger('airflow')
 
 class SparkManager:
     def __init__(self, minio_endpoint: str, access_key: str, secret_key: str):
@@ -13,6 +16,7 @@ class SparkManager:
             spark = (
                 SparkSession.builder
                 .appName("StockBatchProcessor")
+                .config("spark.jars", "/opt/bitnami/spark/jars/hadoop-aws-3.3.1.jar,/opt/bitnami/spark/jars/aws-java-sdk-bundle-1.11.901.jar")
                 .config("spark.hadoop.fs.s3a.endpoint", self.endpoint)
                 .config("spark.hadoop.fs.s3a.access.key", self.access_key)
                 .config("spark.hadoop.fs.s3a.secret.key", self.secret_key)
@@ -22,10 +26,10 @@ class SparkManager:
                 .config("spark.hadoop.fs.s3a.credential.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
                 .getOrCreate()
             )
-            print("Spark session created successfully.")
+            logger.info("Spark session created successfully.")
             return spark
         except Exception as e:
-            print(f"Error creating Spark session: {e}")
+            logger.info(f"Error creating Spark session: {e}")
             raise
 
     def get_spark(self):

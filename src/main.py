@@ -1,5 +1,4 @@
 
-from utils import logger
 from config import config
 from minio_storage import MinioManager, MinioBatchManager
 from kafka_confluent import  StockStreamProducer

@@ -1,15 +1,11 @@
 from datetime import datetime
-import logging
 from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql.functions import col, round as spark_round, max, min, first, last, sum
 from spark_manager import SparkManager
+from src.utils import setup_logger
+from src.config import config
 
-# import sys
-# sys.path.append("/opt/src")
-
-from config import config
-
-logger = logging.getLogger('airflow')
+logger = setup_logger('airflow')
 
 class StockBatchProcessor:
     """
@@ -30,15 +26,14 @@ class StockBatchProcessor:
         else:
             date = datetime.strptime(date, "%Y-%m-%d") if isinstance(date, str) else date
         input_path = f"s3a://{self.bucket_name}/raw/historical/year={date.year}/month={date.month:02d}/day={date.day:02d}/"
-        print(f"Input path: {input_path}")
         logger.info(f"Reading data from: {input_path}")
         try:
             df = self.spark.read.parquet(input_path)
-            print(f"Read {df.show(5)} records from {input_path}")                             
+            logger.info(f"Read {df.show(5)} records from {input_path}")                             
             # print(f"Schema: {df.printSchema()}")
             return df
         except Exception as e:
-            print(f"Failed to read data from {input_path}: {e}")
+            logger.error(f"Failed to read data from {input_path}: {e}")
             return None
 
     def process_stock_data(self, df: DataFrame) -> DataFrame:
@@ -100,22 +95,22 @@ def main():
     Main entrypoint to run the full batch processing.
     """
     spark_manager = SparkManager(
-        minio_endpoint=config.minio_endpoint,
+        minio_endpoint=f'http://{config.minio_endpoint}',
         access_key=config.minio_access_key,
         secret_key=config.minio_secret_key
     )
-    processor = StockBatchProcessor(spark_manager, bucket_name=config.minio_bucket_name)
+    processor = StockBatchProcessor(spark_manager=spark_manager, bucket_name=config.minio_bucket_name)
     try:
-        raw_df = processor.read_data_from_s3(date="2025-04-21")
-        print(f"Raw DataFrame: {raw_df.show(5)}")  # Show first 5 rows for debugging
+        raw_df = processor.read_data_from_s3(date="2025-06-13")
+        logger.info(f"Raw DataFrame: {raw_df.show(5)}")  # Show first 5 rows for debugging
 
-        # if raw_df is not None:
-        #     processed_df = processor.process_stock_data(raw_df)
-        #     if processed_df is not None:
-        #         logger.info("Writing processed data to S3...")
-        #         processor.write_to_s3(processed_df)
-        # else:
-        #     logger.error("No data to process. Exiting.")
+        if raw_df is not None:
+            processed_df = processor.process_stock_data(raw_df)
+            if processed_df is not None:
+                logger.info("Writing processed data to S3...")
+                processor.write_to_s3(processed_df)
+        else:
+            logger.error("No data to process. Exiting.")
     except Exception as e:
         logger.error(f"Batch processing failed: {e}")
     finally:

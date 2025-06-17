@@ -1,13 +1,13 @@
 import json
-import logging
 import pandas as pd
 from datetime import datetime
 from confluent_kafka import Producer
 from typing import Optional
 from src.config import STOCK_SYMBOLS, config
 import yfinance as yf
+from src.utils import setup_logger
 
-logger = logging.getLogger('airflow')
+logger = setup_logger('airflow')
 
 class StockBatchProducer:
     def __init__(self, kafka_bootstrap_servers: str, kafka_topic: str):
@@ -16,7 +16,7 @@ class StockBatchProducer:
             'bootstrap.servers': kafka_bootstrap_servers,
             'acks': 'all',
             'linger.ms': 100,
-            'enable.idempotence': True,
+            'enable.idempotence': False,
             'batch.num.messages': 1000,
             'compression.type': 'snappy'
         })

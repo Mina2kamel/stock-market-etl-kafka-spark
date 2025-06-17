@@ -1,13 +1,13 @@
 import os
-import logging
+import time
 import pandas as pd
 from datetime import datetime
 from minio import Minio
 from minio.error import S3Error
 from collections import defaultdict
-import time
+from src.utils import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger('airflow')
 
 class MinioBatchManager:
     """
