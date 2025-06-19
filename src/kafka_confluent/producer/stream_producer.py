@@ -1,14 +1,13 @@
 import json
-import logging
 import random
 import time
-import pandas as pd
 from datetime import datetime
 from confluent_kafka import Producer
 from typing import Optional
-from config import STOCKS_INITAIL
+from src.config import STOCKS_INITAIL, config
+from src.utils import setup_logger
 
-logger = logging.getLogger('airflow')
+logger = setup_logger('airflow')
 
 class StockStreamProducer:
     def __init__(self, kafka_bootstrap_servers: str, kafka_topic: str, interval: Optional[int] = 30):
@@ -82,7 +81,8 @@ class StockStreamProducer:
         Streams stock data for predefined symbols at regular intervals.
         """
         try:
-            while True:
+            start_time = time.time()
+            while time.time() - start_time < 360:  # Run for 1 min
                 successful_symbols, failed_symbols = 0, 0
                 for symbol in STOCKS_INITAIL.keys():
                     logger.info(f"Producing stock data for {symbol}")
@@ -119,3 +119,16 @@ class StockStreamProducer:
             self.producer.flush()
             logger.info("Flushed stream producer.")
                 
+
+def main():
+    """
+    Main entrypoint to run the stream producer.
+    """
+    producer = StockStreamProducer(
+        kafka_bootstrap_servers=config.bootstrap_servers,
+        kafka_topic=config.stream_topic_name,
+    )
+    producer.stream_stock_data()    
+
+if __name__ == "__main__":
+    main()

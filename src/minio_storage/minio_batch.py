@@ -15,7 +15,7 @@ class MinioBatchManager:
     Flushes when batch size reached or after flush interval in seconds.
     """
 
-    def __init__(self, endpoint, access_key, secret_key, bucket_name, batch_size=100, flush_interval=300):
+    def __init__(self, endpoint, access_key, secret_key, bucket_name, batch_size=100, flush_interval=30):
         self.client = Minio(
             endpoint,
             access_key=access_key,

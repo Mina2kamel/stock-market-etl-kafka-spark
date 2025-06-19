@@ -1,10 +1,10 @@
 import json
-import logging
-from config import config
+from src.config import config
 from confluent_kafka import Consumer, KafkaError
-from minio_storage import MinioBatchManager
+from src.minio_storage import MinioBatchManager
+from src.utils import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger('airflow')
 
 class StockStreamConsumer:
     def __init__(self, kafka_topic: str, minio_manager: MinioBatchManager):
@@ -56,3 +56,22 @@ class StockStreamConsumer:
             self.consumer.close()
             logger.info("Kafka stream consumer closed.")
 
+def main():
+    """
+    Main entrypoint to run the stream consumer.
+    """
+    minio_manager = MinioBatchManager(
+        endpoint=config.minio_endpoint,
+        access_key=config.minio_access_key,
+        secret_key=config.minio_secret_key,
+        bucket_name=config.minio_bucket_name
+    )
+
+    stream_consumer = StockStreamConsumer(
+        kafka_topic=config.stream_topic_name,
+        minio_manager=minio_manager
+    )
+    stream_consumer.consume_stream(timeout=1.0)
+
+if __name__ == "__main__":
+    main()

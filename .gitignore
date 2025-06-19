@@ -13,3 +13,4 @@ venv/
 tmp/
 airflow/logs/
 var/
+jars/

@@ -102,7 +102,7 @@ def main():
     processor = StockBatchProcessor(spark_manager=spark_manager, bucket_name=config.minio_bucket_name)
     try:
         raw_df = processor.read_data_from_s3(date="2025-06-13")
-        logger.info(f"Raw DataFrame: {raw_df.show(5)}")  # Show first 5 rows for debugging
+        logger.info(f"Raw DataFrame: {raw_df.show(5)}")
 
         if raw_df is not None:
             processed_df = processor.process_stock_data(raw_df)

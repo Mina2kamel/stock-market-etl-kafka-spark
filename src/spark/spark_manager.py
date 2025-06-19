@@ -16,7 +16,12 @@ class SparkManager:
             spark = (
                 SparkSession.builder
                 .appName("StockBatchProcessor")
-                .config("spark.jars", "/opt/bitnami/spark/jars/hadoop-aws-3.3.1.jar,/opt/bitnami/spark/jars/aws-java-sdk-bundle-1.11.901.jar")
+                .config(
+                    "spark.jars",
+                    "/opt/bitnami/spark/jars/hadoop-aws-3.3.1.jar,"
+                    "/opt/bitnami/spark/jars/aws-java-sdk-bundle-1.11.901.jar,"
+                    "/opt/bitnami/spark/jars/spark-sql-kafka-0-10_2.12-3.4.4.jar,"
+                )
                 .config("spark.hadoop.fs.s3a.endpoint", self.endpoint)
                 .config("spark.hadoop.fs.s3a.access.key", self.access_key)
                 .config("spark.hadoop.fs.s3a.secret.key", self.secret_key)
