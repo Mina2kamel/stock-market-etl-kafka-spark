@@ -11,7 +11,7 @@ default_args = {
 }
 
 dag = DAG(
-    'stock_batch_pipeline',
+    'stock_stream_pipeline',
     default_args=default_args,
     description='Stream pipeline with Kafka and PySpark',
     schedule_interval=None,
@@ -31,9 +31,10 @@ process_data = BashOperator(
     task_id="process_data",
     bash_command=(
         "spark-submit "
-        "--jars /opt/bitnami/spark/jars/hadoop-aws-3.3.1.jar,"
-        "/opt/bitnami/spark/jars/aws-java-sdk-bundle-1.11.901.jar,"
-        "/opt/bitnami/spark/jars/spark-sql-kafka-0-10_2.12-3.4.4.jar "
+        "--packages "
+        "org.apache.hadoop:hadoop-aws:3.3.1,"
+        "com.amazonaws:aws-java-sdk-bundle:1.11.901,"
+        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.2 "
         "/opt/airflow/src/spark/stream_processor.py"
     ),
     dag=dag,

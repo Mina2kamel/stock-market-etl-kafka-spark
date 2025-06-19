@@ -22,12 +22,12 @@ fi
 echo "Starting Kafka consumer..."
 python3 src/main.py
 
-# # 6. Optionally run your PySpark batch job (example: daily processing)
-# echo "Running PySpark batch job..."
-# spark-submit \
-#   --master local[*] \
-#   --packages org.apache.hadoop:hadoop-aws:3.3.4 \
-#   src/spark_jobs/batch_processor.py
+# 6. Optionally run your PySpark batch job (example: daily processing)
+echo "Running PySpark batch job..."
+spark-submit \
+  --master local[*] \
+  --packages org.apache.hadoop:hadoop-aws:3.3.4 \
+  src/spark_jobs/batch_processor.py
 
 docker exec stock-market-etl-kafka-spark-spark-master-1 \
       spark-submit \
@@ -44,5 +44,5 @@ docker exec stock-market-etl-kafka-spark-spark-master-1 \
 echo "Pipeline completed."
 
 
-# chmod +x run_pipeline.sh
-# ./run_pipeline.sh
+chmod +x run_pipeline.sh
+./run_pipeline.sh

@@ -32,7 +32,20 @@ consume_task = BashOperator(
     dag=dag,
 )
 
+# 3. Process data with PySpark
+process_data = BashOperator(
+    task_id="process_data",
+    bash_command=(
+        "spark-submit "
+        "--packages "
+        "org.apache.hadoop:hadoop-aws:3.3.1,"
+        "com.amazonaws:aws-java-sdk-bundle:1.11.901,"
+        "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.2 "
+        "/opt/airflow/src/spark/batch_processor.py"
+    ),
+    dag=dag,
+    )
 
 
 # Define task dependencies
-produce_task >> consume_task
+produce_task >> consume_task >> process_data
