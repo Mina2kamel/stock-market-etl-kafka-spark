@@ -1,6 +1,7 @@
 import traceback
-from pyspark.sql import DataFrame, SparkSession, Row
+from pyspark.sql import DataFrame
 from pyspark.sql.functions import from_json, col, window
+from pyspark.sql.utils import StreamingQueryException
 from pyspark.sql.types import StructType, StringType, DoubleType, IntegerType, TimestampType
 from spark_manager import SparkManager
 from src.utils import setup_logger
@@ -38,9 +39,14 @@ class StockStreamConsumer:
                 .option("subscribe", self.topic) \
                 .option("startingOffsets", "latest") \
                 .option("failOnDataLoss", "false") \
+                .option("maxOffsetsPerTrigger", 1000) \
+                .option("kafka.group.id", "stock_stream_consumer") \
                 .load()
             logger.info(f"Connected to Kafka topic: {self.topic}")
             return kafka_df
+        except StreamingQueryException as sqe:
+            logger.error(f"StreamingQueryException: {sqe}")
+            raise
         except Exception as e:
             logger.error(f"Error reading from Kafka: {e}")
             raise
@@ -50,6 +56,7 @@ class StockStreamConsumer:
             parsed_df = (
                 df.selectExpr("CAST(value AS STRING)")
                   .select(from_json(col("value"), self.schema).alias("data"))
+                  .filter(col("data").isNotNull())
                   .select("data.*")
             )
             logger.info("Parsed stream data successfully.")
@@ -109,6 +116,10 @@ class StockStreamConsumer:
             )
             logger.info("Streaming query started.")
             return query
+        except StreamingQueryException as sqe:
+            logger.error(f"StreamingQueryException occurred: {sqe}")
+            logger.error(traceback.format_exc())
+            raise
         except Exception as e:
             logger.error(f"Error writing to MinIO: {e}")
             logger.error(traceback.format_exc())
