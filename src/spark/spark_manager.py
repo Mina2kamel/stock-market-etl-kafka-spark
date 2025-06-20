@@ -16,6 +16,10 @@ class SparkManager:
             spark = (
                 SparkSession.builder
                 .appName("StockBatchProcessor")
+                .config("spark.master", "local[*]")
+                .config("spark.sql.shuffle.partitions", "4")
+                .config("spark.default.parallelism", "4")
+                .config("spark.sql.adaptive.enabled", "true")
                 .config(
                     "spark.jars.packages",
                     "org.apache.hadoop:hadoop-aws:3.3.1,"

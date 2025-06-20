@@ -109,7 +109,7 @@ class StockStreamConsumer:
             query = (
                 df.writeStream
                   .foreachBatch(self.process_and_write_batch)
-                  .trigger(processingTime="1 minute")
+                  .trigger(processingTime="30 seconds")
                   .option("checkpointLocation", self.checkpoint_path)
                   .outputMode("append")
                   .start()
